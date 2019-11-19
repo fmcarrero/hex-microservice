@@ -22,7 +22,7 @@ $ export URL_DB=redis
 $ export REDIS_URL =redis://localhost:6379
 $ go run main.go
 ```
+### Run with docker-compose
 
-
-
-
+```sh
+$ docker-compose up
