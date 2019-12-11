@@ -1,23 +1,25 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
-
 	"syscall"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/kelseyhightower/envconfig"
+	"gopkg.in/yaml.v2"
 
 	h "github.com/fmcarrero/hex-microservice/api"
-	mr "github.com/fmcarrero/hex-microservice/repository/mongo"
+	"github.com/fmcarrero/hex-microservice/config"
 	rr "github.com/fmcarrero/hex-microservice/repository/redis"
 
 	"github.com/fmcarrero/hex-microservice/shortener"
+	"github.com/gobuffalo/packr"
 )
 
 // https://www.google.com -> 98sj1-293
@@ -26,7 +28,12 @@ import (
 // repo <- service -> serializer  -> http
 
 func main() {
-	repo := chooseRepo()
+
+	var cfg config.Configuration
+
+	readFile(&cfg)
+	readEnv(&cfg)
+	repo := chooseRepo(&cfg)
 	service := shortener.NewRedirectService(repo)
 	handler := h.NewHandler(service)
 
@@ -41,8 +48,8 @@ func main() {
 
 	errs := make(chan error, 2)
 	go func() {
-		fmt.Println("Listening on port :8000")
-		errs <- http.ListenAndServe(httpPort(), r)
+		fmt.Println("Listening on port :" + cfg.Server.Port)
+		errs <- http.ListenAndServe(":"+cfg.Server.Port, r)
 
 	}()
 
@@ -56,32 +63,38 @@ func main() {
 
 }
 
-func httpPort() string {
-	port := "8000"
-	if os.Getenv("PORT") != "" {
-		port = os.Getenv("PORT")
+func chooseRepo(cfg *config.Configuration) shortener.RedirectRepository {
+	host := fmt.Sprintf("redis://%s:%s", cfg.Database.Host, cfg.Database.Port)
+	repo, err := rr.NewRedisRepository(host)
+	if err != nil {
+		log.Fatal(err)
 	}
-	return fmt.Sprintf(":%s", port)
+	return repo
+
 }
 
-func chooseRepo() shortener.RedirectRepository {
-	switch os.Getenv("URL_DB") {
-	case "redis":
-		redisURL := os.Getenv("REDIS_URL")
-		repo, err := rr.NewRedisRepository(redisURL)
-		if err != nil {
-			log.Fatal(err)
-		}
-		return repo
-	case "mongo":
-		mongoURL := os.Getenv("MONGO_URL")
-		mongodb := os.Getenv("MONGO_DB")
-		mongoTimeout, _ := strconv.Atoi(os.Getenv("MONGO_TIMEOUT"))
-		repo, err := mr.NewMongoRepository(mongoURL, mongodb, mongoTimeout)
-		if err != nil {
-			log.Fatal(err)
-		}
-		return repo
+func processError(err error) {
+	fmt.Println(err)
+	os.Exit(2)
+}
+
+func readFile(cfg *config.Configuration) {
+	box := packr.NewBox("./config")
+	f, err := box.Find("config-local.yml")
+	if err != nil {
+		log.Fatal(err)
 	}
-	return nil
+
+	decoder := yaml.NewDecoder(bytes.NewReader(f))
+	err = decoder.Decode(cfg)
+	if err != nil {
+		processError(err)
+	}
+}
+
+func readEnv(cfg *config.Configuration) {
+	err := envconfig.Process("", cfg)
+	if err != nil {
+		processError(err)
+	}
 }

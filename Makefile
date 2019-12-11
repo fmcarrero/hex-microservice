@@ -7,16 +7,16 @@ DOCKER_IMAGE_NAME=franklincarrero/hex-microservice
 check: test lint vet ## Runs all tests
 
 test: ## Run the unit tests
-	go test -race -v $(shell go list ./... | grep -v /vendor/)
+	go test -cover -race -v $(shell go list ./... | grep -v /vendor/)
 
 lint: ## Lint all files
-	go list ./... | grep -v /vendor/ | xargs -L1 golint -set_exit_status
+	go list ./... 
 
 vet: ## Run the vet tool
 	go vet $(shell go list ./... | grep -v /vendor/)
 
 clean: ## Clean up build artifacts
-	go clean
+	go clean -testcache
 
 docker-build: ## Build Docker image
 	docker build -t ${DOCKER_IMAGE_NAME} .

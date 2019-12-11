@@ -1,0 +1,6 @@
+database:
+    host: localhost
+    port: 6379
+server:
+    host: localhost
+    port: 9200
