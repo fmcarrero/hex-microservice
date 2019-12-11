@@ -7,7 +7,6 @@ require (
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/go-redis/redis v6.15.6+incompatible
 	github.com/gobuffalo/packr v1.30.1
-	github.com/ilyakaznacheev/cleanenv v1.1.5
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.10.3 // indirect
 	github.com/onsi/gomega v1.7.1 // indirect
