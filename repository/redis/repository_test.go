@@ -83,5 +83,5 @@ func TestFind(t *testing.T) {
 	if err != nil {
 		assert.Error(t, err)
 	}
-	assert.Equal(t, response.URL, redirect.URL)
+	assert.Equal(t, response, redirect)
 }

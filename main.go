@@ -80,12 +80,12 @@ func processError(err error) {
 
 func readFile(cfg *config.Configuration) {
 	box := packr.NewBox("./config")
-	f, err := box.Find("config-local.yml")
+	file, err := box.Find("config-local.yml")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	decoder := yaml.NewDecoder(bytes.NewReader(f))
+	decoder := yaml.NewDecoder(bytes.NewReader(file))
 	err = decoder.Decode(cfg)
 	if err != nil {
 		processError(err)
